@@ -8,20 +8,20 @@ import (
 	"strings"
 )
 
-func main()  {
+func main() {
+
+	// define reader stdin
+	reader := bufio.NewReader(os.Stdin)
 
 	// map data
-	var mapData =
-			"########\n" +
-			"#......#\n" +
-			"#.###..#\n" +
-			"#...#.##\n" +
-			"#X#....#\n" +
-			"########\n"
+	var mapData = "########\n" +
+		"#......#\n" +
+		"#.###..#\n" +
+		"#...#.##\n" +
+		"#X#....#\n" +
+		"########\n"
 
 	// define probable treasure
-	var probableTreasure = defineTreasure(mapData)
-	
 
 	// how to play
 	var howToPlay = "- Press 'A' for move Up\n" +
@@ -29,48 +29,92 @@ func main()  {
 		"- Press 'C' for move Bottom\n" +
 		"- Press 'D' for move Left "
 
-
-	// begin
-	fmt.Println("Treasure Hunt")
-	fmt.Println("---------------------")
-	fmt.Println("Press Y for start")
-	fmt.Println("Press X for end")
-
-	reader := bufio.NewReader(os.Stdin)
+	var treasureFound = false
+	var tryAgain = false
 
 	for {
-		fmt.Print("-> ")
 
-		// read string from user input
-		text, _ := reader.ReadString('\n')
-		text = strings.Replace(text, "\n", "", -1)
+		// begin
+		fmt.Println("Treasure Hunt")
+		fmt.Println("---------------------")
+		fmt.Println("Press Y for start")
+		fmt.Println("Press X for end")
+
+		fmt.Print("-> ")
+		var text, _, err = reader.ReadLine()
+
+		if err != nil {
+			fmt.Println(err)
+		}
 
 		// if user press X then program will close
-		if strings.Compare("X", strings.ToUpper(text)) == 0 {
+		if strings.Compare("X", strings.ToUpper(string(text))) == 0 {
 			fmt.Println("I hope you come back again ..")
 			break
-		}else if strings.Compare("Y", strings.ToUpper(text)) == 0{
+		} else if strings.Compare("Y", strings.ToUpper(string(text))) == 0 {
+			var mapGame = mapData
+
 			for {
-				fmt.Println(mapData)
-				fmt.Println(howToPlay)
+				var probableTreasure = defineTreasure(mapGame)
+				for {
+					fmt.Println(mapGame)
+					fmt.Println(howToPlay)
 
-				fmt.Print("-> ")
-				text, _ := reader.ReadString('\n')
-				text = strings.Replace(text, "\n", "", -1)
+					fmt.Print("-> ")
+					text, _, err = reader.ReadLine()
 
-				if strings.Compare("X", strings.ToUpper(text)) == 0 {
-					fmt.Println("I hope you come back again ..")
-					break
+					if err != nil {
+						fmt.Println(err)
+					}
+
+					if strings.Compare("X", strings.ToUpper(string(text))) == 0 {
+						fmt.Println("I hope you come back again ..")
+						break
+					}
+					mapGame = controlData(mapGame, strings.ToUpper(string(text)), probableTreasure)
+
+					for i := 0; i < len(mapGame); i++ {
+						if mapGame[i] == '$' {
+
+							fmt.Println(mapGame)
+
+							fmt.Println("Congratulation The treasure was found. ")
+							treasureFound = true
+							break
+						}
+					}
+
+					if treasureFound {
+						break
+					}
+
 				}
-				mapData = controlData(mapData,strings.ToUpper(text),probableTreasure)
 
-				for i := 0; i < len(mapData); i++ {
-					if mapData[i]== '$' {
-						fmt.Println("Congratulation The treasure was found. ")
-						return
+				for {
+					fmt.Println("Are you want to try again ?")
+					fmt.Println("Press Y for Yes")
+					fmt.Println("Press X for Close")
+					text, _, err = reader.ReadLine()
+					if strings.Compare("Y", strings.ToUpper(string(text))) == 0 {
+						treasureFound = false
+						tryAgain = true
+						break
+					}
+					if strings.Compare("X", strings.ToUpper(string(text))) == 0 {
+						tryAgain = false
+						break
 					}
 				}
+
+				if tryAgain {
+					mapGame = mapData
+				} else {
+					fmt.Println("I hope you come back again ..")
+					return
+				}
+
 			}
+
 		}
 
 	}
@@ -78,37 +122,36 @@ func main()  {
 }
 
 // control user
-func controlData(mapData string,move string, treasure int) string{
+func controlData(mapData string, move string, treasure int) string {
 
- var currentPosition = strings.Index(mapData,"X")
-	var nextPosition = 0;
+	var currentPosition = strings.Index(mapData, "X")
+	var nextPosition = 0
 	switch move {
 	case "A":
-		nextPosition= currentPosition -9
+		nextPosition = currentPosition - 9
 		break
 	case "B":
-		 nextPosition = currentPosition +1
+		nextPosition = currentPosition + 1
 		break
 	case "C":
-		 nextPosition = currentPosition +9
+		nextPosition = currentPosition + 9
 	case "D":
-		 nextPosition = currentPosition -1
+		nextPosition = currentPosition - 1
 	default:
 		break
 	}
-	if strings.Compare("#", string(mapData[nextPosition])) == 0{
-	}else if nextPosition==treasure {
-		mapData = strings.Replace(mapData,"X",".",currentPosition)
-		mapData = MovePerson(mapData,'$',nextPosition)
-	}else{
-		mapData = strings.Replace(mapData,"X",".",currentPosition)
-		mapData = MovePerson(mapData,'X',nextPosition)
+	if strings.Compare("#", string(mapData[nextPosition])) == 0 {
+		return mapData
+	} else if nextPosition == treasure {
+		mapData = strings.Replace(mapData, "X", ".", currentPosition)
+		mapData = MovePerson(mapData, '$', nextPosition)
+	} else {
+		mapData = strings.Replace(mapData, "X", ".", currentPosition)
+		mapData = MovePerson(mapData, 'X', nextPosition)
 	}
 	return mapData
 
-
 }
-
 
 // move person
 func MovePerson(str string, replacement rune, index int) string {
@@ -117,24 +160,23 @@ func MovePerson(str string, replacement rune, index int) string {
 	return string(out)
 }
 
-
 // define treasure
-func defineTreasure (data string) int {
+func defineTreasure(data string) int {
 	var min = 1
 	var max = 54
-	probable:= rand.Intn(54)
+	probable := rand.Intn(54)
 	var obstacle = []int{}
-	for i := 0; i <len(data); i++ {
-		if string(data[i])=="."{
+	for i := 0; i < len(data); i++ {
+		if string(data[i]) == "." {
 			obstacle = append(obstacle, i)
 		}
 	}
-	for  {
-		for _,value :=range obstacle{
-			if value==probable {
+	for {
+		for _, value := range obstacle {
+			if value == probable {
 				return probable
 			}
 		}
-		probable = rand.Intn(max-min)
+		probable = rand.Intn(max - min)
 	}
 }
